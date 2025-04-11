@@ -44,12 +44,9 @@ close_button_color = [1.0, 1.0, 0.0]        # Yellow
 def midpoint(x0, y0, x1, y1):
     """Midpoint Line Drawing Algorithm using GL_POINTS."""
     points = []
-
     dx = x1 - x0
     dy = y1 - y0
-
     x, y = x0, y0
-
     x_inc = 1 if dx >= 0 else -1
     y_inc = 1 if dy >= 0 else -1
 
@@ -81,8 +78,6 @@ def midpoint(x0, y0, x1, y1):
 
 
 def draw_line(x0, y0, x1, y1):
-    """Draw line using midpoint and GL_POINTS"""
-    # Convert from float to integer screen coords
     scale = 1000
     points = midpoint(int(x0 * scale), int(y0 * scale),
                       int(x1 * scale), int(y1 * scale))
