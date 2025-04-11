@@ -5,27 +5,27 @@ import math
 import random
 
 # Size of window
-w_width, w_height = 800, 600
+w_width, w_height = 600, 800
 
 # Catcher properties
 catcher_x = 0
-catcher_y = -0.94
+catcher_y = -0.96
 catcher_width = 0.4
-catcher_height = 0.1
-catcher_shift = 0.03
+catcher_height = 0.05
+catcher_shift = 0.05
 catcher_color = [1.0, 1.0, 1.0]             # White
-
-# Game variables
-score = 0
-game_over = False
 
 # Diamond properties
 diamond_x = 0
 diamond_y = 1
-diamond_size = 0.1
+diamond_size = 0.08
 fall_speed = 0.0004
 max_fall_speed = 0.003
 diamond_color = [0.0, 1.0, 1.0]             # Cyan
+
+# Game variables
+score = 0
+game_over = False
 
 # Reset button properties
 reset_button_pos = (-0.85, 0.85)
@@ -43,9 +43,8 @@ close_button_pos = (0.85, 0.85)
 close_button_size = 0.05
 close_button_color = [1.0, 1.0, 0.0]        # Yellow
 
+
 # Midpoint
-
-
 def find_zone(x0, y0, x1, y1):
     dx = x1 - x0
     dy = y1 - y0
@@ -153,8 +152,10 @@ def draw_line(x0, y0, x1, y1):
                       int(x1 * scale), int(y1 * scale))
     for x, y in points:
         glVertex2f(x / scale, y / scale)
+# Midpoint Drawing done
 
 
+# Draw Catcher
 def draw_catcher():
     glColor3f(*catcher_color)
     top_width = catcher_width
@@ -182,21 +183,20 @@ def draw_catcher():
     glEnd()
 
 
+# Draw Diamond
 def draw_diamond():
     glColor3f(*diamond_color)
     x, y = diamond_x, diamond_y
     size = diamond_size
 
-    # Diamond vertices (centered at (x, y))
     diamond = [
-        (x, y + size),  # top
+        (x, y + size + 0.03),  # top
         (x - size, y),  # left
-        (x, y - size),  # bottom
+        (x, y - size - 0.03),  # bottom
         (x + size, y),  # right
     ]
 
     glBegin(GL_POINTS)
-    # Draw lines connecting the points of the diamond
     draw_line(*diamond[0], *diamond[1])  # Top to Left
     draw_line(*diamond[1], *diamond[2])  # Left to Bottom
     draw_line(*diamond[2], *diamond[3])  # Bottom to Right
@@ -204,6 +204,7 @@ def draw_diamond():
     glEnd()
 
 
+# Draw Reset button
 def draw_reset_button():
     glColor3f(*reset_button_color)
     x, y = reset_button_pos
@@ -211,25 +212,23 @@ def draw_reset_button():
 
     glBegin(GL_POINTS)
 
-    # Arrow shape: simple triangle/arrow pointing right
     arrow = [
         (x + size * 0.5, y),            # right tip
         (x - size * 0.5, y),            # left tip
         (x, y + size * 0.5),            # top
         (x, y - size * 0.5),            # bottom
-
     ]
 
-    # Draw edges using midpoint
     draw_line(*arrow[0], *arrow[1])
     draw_line(*arrow[0], *arrow[2])
     draw_line(*arrow[0], *arrow[3])
 
     glEnd()
 
+# Draw Pause button
+
 
 def draw_pause_button():
-    """Draw the pause/play button that switches between parallel lines and a triangle."""
     glColor3f(*pause_button_color)
     x, y = pause_button_pos
     size = pause_button_size
@@ -237,33 +236,29 @@ def draw_pause_button():
     glBegin(GL_POINTS)
 
     if pause:
-        # Triangle shape for pause state
         triangle = [
             (x + size * 0.5, y),               # right tip
             (x - size * 0.5, y + size * 0.5),  # top left
             (x - size * 0.5, y - size * 0.5)   # bottom left
         ]
-        # Draw the triangle
         draw_line(*triangle[0], *triangle[1])
         draw_line(*triangle[1], *triangle[2])
         draw_line(*triangle[2], *triangle[0])
     else:
-        # Parallel lines shape for play state
         line1_start = (x - size * 0.25, y + size * 0.5)  # top of left line
         line1_end = (x - size * 0.25, y - size * 0.5)  # bottom of left line
 
         line2_start = (x + size * 0.25, y + size * 0.5)  # top of right line
         line2_end = (x + size * 0.25, y - size * 0.5)  # bottom of right line
 
-        # Draw the parallel lines
         draw_line(*line1_start, *line1_end)
         draw_line(*line2_start, *line2_end)
 
     glEnd()
 
 
+# Draw close button
 def draw_close_button():
-    """Draw an 'X' shaped close button using GL_POINTS."""
     glColor3f(*close_button_color)
     x, y = close_button_pos
     s = close_button_size
@@ -274,8 +269,8 @@ def draw_close_button():
     glEnd()
 
 
+# Diamond position updating logic
 def update_diamond_position():
-    """Update the position of the falling diamond."""
     global diamond_y, diamond_x, fall_speed, score, game_over, pause
 
     if not pause:
@@ -291,23 +286,24 @@ def update_diamond_position():
         if (diamond_bottom <= catcher_top <= diamond_y + diamond_size and catcher_left <= diamond_x <= catcher_right):
             score += 1
             fall_speed = min(fall_speed + 0.0002, max_fall_speed)
-            print("Score:", score)  # Optional: remove or keep for debug
+            print("Score:", score)
             diamond_y = 1
             diamond_x = random.uniform(-1, 1)
-        elif diamond_y < -1:
+        elif diamond_y - diamond_size <= -1:
             game_over = True
             pause = True
             print("Game Over...Score:", score)
 
 
+# Diamond update
 def update():
-    """Update the scene."""
     global pause
     if not pause:
         update_diamond_position()
     glutPostRedisplay()
 
 
+# Reset function
 def reset():
     global catcher_x, diamond_y, diamond_x, fall_speed, game_over, pause, score
     catcher_x = 0
@@ -319,22 +315,26 @@ def reset():
     fall_speed = 0.0004
 
 
+# Pause function
 def toggle_pause():
-    """Toggle pause state and button appearance."""
     global pause
     pause = not pause
 
 
+# Catcher movement
 def special_keys(key, x, y):
     global catcher_x
-    if not pause and not game_over:
+    if not pause and not game_over:         # Only allow movement when not paused and not game_over state
         if key == GLUT_KEY_LEFT:
-            catcher_x -= catcher_shift
+            if catcher_x - catcher_width / 2 > -1:
+                catcher_x -= catcher_shift
         elif key == GLUT_KEY_RIGHT:
-            catcher_x += catcher_shift
+            if catcher_x + catcher_width / 2 < 1:
+                catcher_x += catcher_shift
     glutPostRedisplay()
 
 
+# Mouse click functions for buttons
 def mouse_click(button, state, x, y):
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         # Convert mouse (x, y) to OpenGL coords
@@ -367,18 +367,6 @@ def mouse_click(button, state, x, y):
             glutLeaveMainLoop()
 
 
-def special_keys(key, x, y):
-    global catcher_x
-    if not pause:  # Only allow movement when not paused
-        if key == GLUT_KEY_LEFT:
-            if catcher_x - catcher_width / 2 > -1:
-                catcher_x -= catcher_shift
-        elif key == GLUT_KEY_RIGHT:
-            if catcher_x + catcher_width / 2 < 1:
-                catcher_x += catcher_shift
-        glutPostRedisplay()
-
-
 def display():
     glClear(GL_COLOR_BUFFER_BIT)
     draw_catcher()
@@ -399,8 +387,8 @@ def main():
 
     glutInit()
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)
-    glutInitWindowSize(800, 600)
-    glutCreateWindow(b"Moveable catcher with Midpoint Line")
+    glutInitWindowSize(w_width, w_height)
+    glutCreateWindow(b"Catch the Diamonds!")
     glutDisplayFunc(display)
     glutSpecialFunc(special_keys)
     glutMouseFunc(mouse_click)
@@ -408,8 +396,6 @@ def main():
     glutIdleFunc(update)  # Update the scene continuously
 
     glClearColor(0.0, 0.0, 0.0, 1.0)  # black background
-    glColor3f(1.0, 1.0, 1.0)  # white points
-    glPointSize(2.0)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluOrtho2D(-1, 1, -1, 1)  # coordinate system
