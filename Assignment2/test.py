@@ -12,6 +12,17 @@ catcher_height = 0.1
 catcher_shift = 0.03
 catcher_color = [1.0, 1.0, 1.0]             # White
 
+# Game variables
+score = 0
+game_over = False
+
+# Diamond properties
+diamond_x = 0
+diamond_y = 1
+diamond_size = 0.1
+fall_speed = 0.0004
+diamond_color = [0.0, 1.0, 1.0]             # Cyan
+
 # Reset button properties
 reset_button_pos = (-0.85, 0.85)
 reset_button_size = 0.1
@@ -105,6 +116,28 @@ def draw_catcher():
     glEnd()
 
 
+def draw_diamond():
+    glColor3f(*diamond_color)
+    x, y = diamond_x, diamond_y
+    size = diamond_size
+
+    # Diamond vertices (centered at (x, y))
+    diamond = [
+        (x, y + size),  # top
+        (x - size, y),  # left
+        (x, y - size),  # bottom
+        (x + size, y),  # right
+    ]
+
+    glBegin(GL_POINTS)
+    # Draw lines connecting the points of the diamond
+    draw_line(*diamond[0], *diamond[1])  # Top to Left
+    draw_line(*diamond[1], *diamond[2])  # Left to Bottom
+    draw_line(*diamond[2], *diamond[3])  # Bottom to Right
+    draw_line(*diamond[3], *diamond[0])  # Right to Top
+    glEnd()
+
+
 def draw_reset_button():
     glColor3f(*reset_button_color)
     x, y = reset_button_pos
@@ -175,9 +208,47 @@ def draw_close_button():
     glEnd()
 
 
+def update_diamond_position():
+    """Update the position of the falling diamond."""
+    global diamond_y, diamond_x, score, game_over, pause
+
+    if not pause:
+        diamond_y -= fall_speed  # Move the diamond down
+
+        catcher_top = catcher_y + catcher_height / 2
+        catcher_left = catcher_x - catcher_width / 2
+        catcher_right = catcher_x + catcher_width / 2
+
+        diamond_bottom = diamond_y - diamond_size
+
+        # Reset the diamond position when it reaches the bottom
+        if (diamond_bottom <= catcher_top <= diamond_y + diamond_size and catcher_left <= diamond_x <= catcher_right):
+            score += 1
+            print("Score:", score)  # Optional: remove or keep for debug
+            diamond_y = 1
+            diamond_x = random.uniform(-1, 1)
+        elif diamond_y < -1:
+            game_over = True
+            pause = True
+            print("Game Over...Score:", score)
+
+
+def update():
+    """Update the scene."""
+    global pause
+    if not pause:
+        update_diamond_position()
+    glutPostRedisplay()
+
+
 def reset():
-    global catcher_x
+    global catcher_x, diamond_y, diamond_x, game_over, pause, score
     catcher_x = 0
+    diamond_y = 1
+    diamond_x = random.uniform(-1, 1)
+    game_over = False
+    pause = False
+    score = 0
 
 
 def toggle_pause():
@@ -188,10 +259,11 @@ def toggle_pause():
 
 def special_keys(key, x, y):
     global catcher_x
-    if key == GLUT_KEY_LEFT:
-        catcher_x -= catcher_shift
-    elif key == GLUT_KEY_RIGHT:
-        catcher_x += catcher_shift
+    if not pause and not game_over:
+        if key == GLUT_KEY_LEFT:
+            catcher_x -= catcher_shift
+        elif key == GLUT_KEY_RIGHT:
+            catcher_x += catcher_shift
     glutPostRedisplay()
 
 
@@ -215,14 +287,15 @@ def mouse_click(button, state, x, y):
         bx, by = pause_button_pos
         s = pause_button_size
         if (bx - s <= norm_x <= bx + s) and (by - s <= norm_y <= by + s):
-            toggle_pause()
+            if not game_over:  # Prevent toggling pause when game is over
+                toggle_pause()
             glutPostRedisplay()
 
         # Check if inside the close (X) button area
         bx, by = close_button_pos
         s = close_button_size
         if (bx - s <= norm_x <= bx + s) and (by - s <= norm_y <= by + s):
-            print("Exiting...")
+            print("Game Closed...Bye")
             glutLeaveMainLoop()
 
 
@@ -241,6 +314,7 @@ def special_keys(key, x, y):
 def display():
     glClear(GL_COLOR_BUFFER_BIT)
     draw_catcher()
+    draw_diamond()
     draw_reset_button()
     draw_pause_button()
     draw_close_button()
@@ -250,6 +324,7 @@ def display():
 def main():
     global catcher_color, reset_button_color, pause_button_color, close_button_color
     catcher_color = [0.0, 1.0, 0.0]
+    diamond_color = [0.0, 1.0, 1.0]
     reset_button_color = [1.0, 0.0, 0.0]
     pause_button_color = [0.0, 0.0, 1.0]
     close_button_color = [1.0, 1.0, 0.0]
@@ -261,6 +336,8 @@ def main():
     glutDisplayFunc(display)
     glutSpecialFunc(special_keys)
     glutMouseFunc(mouse_click)
+
+    glutIdleFunc(update)  # Update the scene continuously
 
     glClearColor(0.0, 0.0, 0.0, 1.0)  # black background
     glColor3f(1.0, 1.0, 1.0)  # white points
