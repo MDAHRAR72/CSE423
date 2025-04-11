@@ -4,16 +4,32 @@ from OpenGL.GLU import *
 import math
 import random
 
-# Initial position of the square
+# Catcher properties
 catcher_x = 0
-catcher_y = -0.8
+catcher_y = -0.94
 catcher_width = 0.4
 catcher_height = 0.1
 catcher_shift = 0.03
-catcher_color = [1.0, 1.0, 1.0]  # White
+catcher_color = [1.0, 1.0, 1.0]             # White
+
+# Reset button properties
+reset_button_pos = (-0.85, 0.85)
+reset_button_size = 0.1
+reset_button_color = [1.0, 0.0, 0.0]        # Red
+
+# Play Pause button
+pause_button_pos = (0, 0.85)
+pause_button_size = 0.1
+pause_button_color = [0.0, 0.0, 1.0]        # Blue
+pause = False
+
+# Close button
+close_button_pos = (0.85, 0.85)
+close_button_size = 0.05
+close_button_color = [1.0, 1.0, 0.0]        # Yellow
 
 
-def midpoint_line(x0, y0, x1, y1):
+def midpoint(x0, y0, x1, y1):
     """Midpoint Line Drawing Algorithm using GL_POINTS."""
     points = []
 
@@ -55,15 +71,15 @@ def midpoint_line(x0, y0, x1, y1):
 def draw_line(x0, y0, x1, y1):
     """Draw line using midpoint and GL_POINTS"""
     # Convert from float to integer screen coords
-    scale = 1000  # arbitrary scaling to use pixel-like grid
-    points = midpoint_line(int(x0 * scale), int(y0 * scale),
-                           int(x1 * scale), int(y1 * scale))
+    scale = 1000
+    points = midpoint(int(x0 * scale), int(y0 * scale),
+                      int(x1 * scale), int(y1 * scale))
     for x, y in points:
         glVertex2f(x / scale, y / scale)
 
 
 def draw_catcher():
-    """Draw square (catcher) with midpoint lines"""
+    glColor3f(*catcher_color)
     top_width = catcher_width
     bottom_width = catcher_width * 0.6  # narrower bottom
     half_top = top_width / 2
@@ -89,10 +105,85 @@ def draw_catcher():
     glEnd()
 
 
-def display():
-    glClear(GL_COLOR_BUFFER_BIT)
-    draw_catcher()
-    glFlush()
+def draw_reset_button():
+    glColor3f(*reset_button_color)
+    x, y = reset_button_pos
+    size = reset_button_size
+
+    glBegin(GL_POINTS)
+
+    # Arrow shape: simple triangle/arrow pointing right
+    arrow = [
+        (x + size * 0.5, y),            # right tip
+        (x - size * 0.5, y),            # left tip
+        (x, y + size * 0.5),            # top
+        (x, y - size * 0.5),            # bottom
+
+    ]
+
+    # Draw edges using midpoint
+    draw_line(*arrow[0], *arrow[1])
+    draw_line(*arrow[0], *arrow[2])
+    draw_line(*arrow[0], *arrow[3])
+
+    glEnd()
+
+
+def draw_pause_button():
+    """Draw the pause/play button that switches between parallel lines and a triangle."""
+    glColor3f(*pause_button_color)
+    x, y = pause_button_pos
+    size = pause_button_size
+
+    glBegin(GL_POINTS)
+
+    if pause:
+        # Triangle shape for pause state
+        triangle = [
+            (x + size * 0.5, y),               # right tip
+            (x - size * 0.5, y + size * 0.5),  # top left
+            (x - size * 0.5, y - size * 0.5)   # bottom left
+        ]
+        # Draw the triangle
+        draw_line(*triangle[0], *triangle[1])
+        draw_line(*triangle[1], *triangle[2])
+        draw_line(*triangle[2], *triangle[0])
+    else:
+        # Parallel lines shape for play state
+        line1_start = (x - size * 0.25, y + size * 0.5)  # top of left line
+        line1_end = (x - size * 0.25, y - size * 0.5)  # bottom of left line
+
+        line2_start = (x + size * 0.25, y + size * 0.5)  # top of right line
+        line2_end = (x + size * 0.25, y - size * 0.5)  # bottom of right line
+
+        # Draw the parallel lines
+        draw_line(*line1_start, *line1_end)
+        draw_line(*line2_start, *line2_end)
+
+    glEnd()
+
+
+def draw_close_button():
+    """Draw an 'X' shaped close button using GL_POINTS."""
+    glColor3f(*close_button_color)
+    x, y = close_button_pos
+    s = close_button_size
+
+    glBegin(GL_POINTS)
+    draw_line(x - s, y + s, x + s, y - s)  # \
+    draw_line(x - s, y - s, x + s, y + s)  # /
+    glEnd()
+
+
+def reset():
+    global catcher_x
+    catcher_x = 0
+
+
+def toggle_pause():
+    """Toggle pause state and button appearance."""
+    global pause
+    pause = not pause
 
 
 def special_keys(key, x, y):
@@ -104,13 +195,72 @@ def special_keys(key, x, y):
     glutPostRedisplay()
 
 
+def mouse_click(button, state, x, y):
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        # Convert mouse (x, y) to OpenGL coords
+        width = glutGet(GLUT_WINDOW_WIDTH)
+        height = glutGet(GLUT_WINDOW_HEIGHT)
+
+        norm_x = (x / width) * 2 - 1
+        norm_y = 1 - (y / height) * 2  # flip y
+
+        # Check if inside button area
+        bx, by = reset_button_pos
+        s = reset_button_size
+        if (bx - s <= norm_x <= bx + s) and (by - s <= norm_y <= by + s):
+            reset()
+            glutPostRedisplay()
+
+        # Check if inside the pause/play button area
+        bx, by = pause_button_pos
+        s = pause_button_size
+        if (bx - s <= norm_x <= bx + s) and (by - s <= norm_y <= by + s):
+            toggle_pause()
+            glutPostRedisplay()
+
+        # Check if inside the close (X) button area
+        bx, by = close_button_pos
+        s = close_button_size
+        if (bx - s <= norm_x <= bx + s) and (by - s <= norm_y <= by + s):
+            print("Exiting...")
+            glutLeaveMainLoop()
+
+
+def special_keys(key, x, y):
+    global catcher_x
+    if not pause:  # Only allow movement when not paused
+        if key == GLUT_KEY_LEFT:
+            if catcher_x - catcher_width / 2 > -1:
+                catcher_x -= catcher_shift
+        elif key == GLUT_KEY_RIGHT:
+            if catcher_x + catcher_width / 2 < 1:
+                catcher_x += catcher_shift
+        glutPostRedisplay()
+
+
+def display():
+    glClear(GL_COLOR_BUFFER_BIT)
+    draw_catcher()
+    draw_reset_button()
+    draw_pause_button()
+    draw_close_button()
+    glFlush()
+
+
 def main():
+    global catcher_color, reset_button_color, pause_button_color, close_button_color
+    catcher_color = [0.0, 1.0, 0.0]
+    reset_button_color = [1.0, 0.0, 0.0]
+    pause_button_color = [0.0, 0.0, 1.0]
+    close_button_color = [1.0, 1.0, 0.0]
+
     glutInit()
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB)
     glutInitWindowSize(800, 600)
     glutCreateWindow(b"Moveable catcher with Midpoint Line")
     glutDisplayFunc(display)
     glutSpecialFunc(special_keys)
+    glutMouseFunc(mouse_click)
 
     glClearColor(0.0, 0.0, 0.0, 1.0)  # black background
     glColor3f(1.0, 1.0, 1.0)  # white points
