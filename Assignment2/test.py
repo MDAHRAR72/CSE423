@@ -21,6 +21,7 @@ diamond_x = 0
 diamond_y = 1
 diamond_size = 0.1
 fall_speed = 0.0004
+max_fall_speed = 0.003
 diamond_color = [0.0, 1.0, 1.0]             # Cyan
 
 # Reset button properties
@@ -210,7 +211,7 @@ def draw_close_button():
 
 def update_diamond_position():
     """Update the position of the falling diamond."""
-    global diamond_y, diamond_x, score, game_over, pause
+    global diamond_y, diamond_x, fall_speed, score, game_over, pause
 
     if not pause:
         diamond_y -= fall_speed  # Move the diamond down
@@ -224,6 +225,7 @@ def update_diamond_position():
         # Reset the diamond position when it reaches the bottom
         if (diamond_bottom <= catcher_top <= diamond_y + diamond_size and catcher_left <= diamond_x <= catcher_right):
             score += 1
+            fall_speed = min(fall_speed + 0.0002, max_fall_speed)
             print("Score:", score)  # Optional: remove or keep for debug
             diamond_y = 1
             diamond_x = random.uniform(-1, 1)
@@ -242,13 +244,14 @@ def update():
 
 
 def reset():
-    global catcher_x, diamond_y, diamond_x, game_over, pause, score
+    global catcher_x, diamond_y, diamond_x, fall_speed, game_over, pause, score
     catcher_x = 0
     diamond_y = 1
     diamond_x = random.uniform(-1, 1)
     game_over = False
     pause = False
     score = 0
+    fall_speed = 0.0004
 
 
 def toggle_pause():
