@@ -1,7 +1,6 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import math
 import random
 
 # Size of window
@@ -19,8 +18,8 @@ catcher_color = [1.0, 1.0, 1.0]             # White
 diamond_x = 0
 diamond_y = 1
 diamond_size = 0.08
-fall_speed = 0.0004
-max_fall_speed = 0.003
+fall_speed = 0.003
+max_fall_speed = 0.03
 diamond_color = [0.0, 1.0, 1.0]             # Cyan
 
 # Game variables
@@ -284,7 +283,7 @@ def animate():
         # Reset the diamond position when it reaches the bottom
         if (diamond_bottom <= catcher_top <= diamond_y + diamond_size and catcher_left <= diamond_x <= catcher_right):
             score += 1
-            fall_speed = min(fall_speed + 0.0002, max_fall_speed)
+            fall_speed = min(fall_speed + 0.0008, max_fall_speed)
             print("Score:", score)
             diamond_y = 1
             diamond_x = random.uniform(-1, 1)
@@ -311,7 +310,7 @@ def reset():
     game_over = False
     pause = False
     score = 0
-    fall_speed = 0.0004
+    fall_speed = 0.003
 
 
 # Pause function
