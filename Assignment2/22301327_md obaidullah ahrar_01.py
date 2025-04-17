@@ -1,7 +1,6 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import math
 import random
 
 # Size of window
@@ -19,8 +18,8 @@ catcher_color = [1.0, 1.0, 1.0]             # White
 diamond_x = 0
 diamond_y = 1
 diamond_size = 0.08
-fall_speed = 0.0004
-max_fall_speed = 0.003
+fall_speed = 0.003
+max_fall_speed = 0.03
 diamond_color = [0.0, 1.0, 1.0]             # Cyan
 
 # Game variables
@@ -136,7 +135,6 @@ def midpoint(x0, y0, x1, y1):
     x0_z, y0_z = conv_to_zone_0(x0, y0, zone)
     x1_z, y1_z = conv_to_zone_0(x1, y1, zone)
 
-    # Ensure left-to-right
     if x0_z > x1_z:
         x0_z, y0_z, x1_z, y1_z = x1_z, y1_z, x0_z, y0_z
 
@@ -159,7 +157,7 @@ def draw_line(x0, y0, x1, y1):
 def draw_catcher():
     glColor3f(*catcher_color)
     top_width = catcher_width
-    bottom_width = catcher_width * 0.6  # narrower bottom
+    bottom_width = catcher_width * 0.6
     half_top = top_width / 2
     half_bottom = bottom_width / 2
     half_height = catcher_height / 2
@@ -264,17 +262,17 @@ def draw_close_button():
     s = close_button_size
 
     glBegin(GL_POINTS)
-    draw_line(x - s, y + s, x + s, y - s)  # \
-    draw_line(x - s, y - s, x + s, y + s)  # /
+    draw_line(x - s, y + s, x + s, y - s)  # Left Cross
+    draw_line(x - s, y - s, x + s, y + s)  # Right Cross
     glEnd()
 
 
 # Diamond position updating logic
-def update_diamond_position():
+def animate():
     global diamond_y, diamond_x, fall_speed, score, game_over, pause
 
     if not pause:
-        diamond_y -= fall_speed  # Move the diamond down
+        diamond_y -= fall_speed  # Diamond Falling
 
         catcher_top = catcher_y + catcher_height / 2
         catcher_left = catcher_x - catcher_width / 2
@@ -285,7 +283,7 @@ def update_diamond_position():
         # Reset the diamond position when it reaches the bottom
         if (diamond_bottom <= catcher_top <= diamond_y + diamond_size and catcher_left <= diamond_x <= catcher_right):
             score += 1
-            fall_speed = min(fall_speed + 0.0002, max_fall_speed)
+            fall_speed = min(fall_speed + 0.0008, max_fall_speed)
             print("Score:", score)
             diamond_y = 1
             diamond_x = random.uniform(-1, 1)
@@ -299,7 +297,7 @@ def update_diamond_position():
 def update():
     global pause
     if not pause:
-        update_diamond_position()
+        animate()
     glutPostRedisplay()
 
 
@@ -312,7 +310,7 @@ def reset():
     game_over = False
     pause = False
     score = 0
-    fall_speed = 0.0004
+    fall_speed = 0.003
 
 
 # Pause function
@@ -378,7 +376,7 @@ def display():
 
 
 def main():
-    global catcher_color, reset_button_color, pause_button_color, close_button_color
+    global catcher_color, diamond_color, reset_button_color, pause_button_color, close_button_color
     catcher_color = [0.0, 1.0, 0.0]
     diamond_color = [0.0, 1.0, 1.0]
     reset_button_color = [1.0, 0.0, 0.0]
@@ -393,7 +391,7 @@ def main():
     glutSpecialFunc(special_keys)
     glutMouseFunc(mouse_click)
 
-    glutIdleFunc(update)  # Update the scene continuously
+    glutIdleFunc(update)
 
     glClearColor(0.0, 0.0, 0.0, 1.0)  # black background
     glMatrixMode(GL_PROJECTION)
